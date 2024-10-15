@@ -57,7 +57,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-6">
-      <h1 className="text-2xl font-bold mb-6">Commit ZK Proof</h1>
+      <h1 className="text-2xl font-bold mb-6">GitHub Commit ZK Proof</h1>
 
       <div className="w-full max-w-lg space-y-4">
         <div>

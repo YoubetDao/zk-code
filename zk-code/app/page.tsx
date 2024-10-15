@@ -61,7 +61,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-6">
-      <h1 className="text-2xl font-bold mb-4">GitHub Commits Verifier</h1>
+      <h1 className="text-2xl font-bold mb-4">GitHub Commits Fetcher</h1>
 
       <div className="mb-4 w-full max-w-lg">
         <Input
