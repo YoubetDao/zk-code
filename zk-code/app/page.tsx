@@ -88,8 +88,8 @@ export default function Home() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Commit</TableHead>
                 <TableHead>Message</TableHead>
-                <TableHead>Hash</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Action</TableHead>
               </TableRow>
@@ -97,9 +97,6 @@ export default function Home() {
             <TableBody>
               {commits.map((commit: any) => (
                 <TableRow key={commit.sha}>
-                  <TableCell className="font-medium">
-                    {commit.commit.message}
-                  </TableCell>
                   <TableCell>
                     <Link
                       href={`https://github.com/${
@@ -114,6 +111,9 @@ export default function Home() {
                       {commit.sha.substring(0, 7)}
                     </Link>
                   </TableCell>
+                  <TableCell className="font-medium">
+                    {commit.commit.message}
+                  </TableCell>
                   <TableCell>
                     {new Date(commit.commit.author.date).toLocaleString()}
                   </TableCell>
@@ -122,7 +122,7 @@ export default function Home() {
                       onClick={() => handleClaim(commit.sha)}
                       className="bg-greyscale-50/8 border border-white/80 text-white hover:border-opacity-80 hover:bg-white/10"
                     >
-                      proof
+                      gen proof
                     </Button>
                   </TableCell>
                 </TableRow>
