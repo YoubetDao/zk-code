@@ -5,6 +5,15 @@ import axios from "axios";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation"; // Ensure you're using this import for the App Router
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import Link from "next/link";
 
 export default function Home() {
   const [repoUrl, setRepoUrl] = useState("");
@@ -52,7 +61,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-6">
-      <h1 className="text-2xl font-bold mb-4">GitHub Commit Viewer</h1>
+      <h1 className="text-2xl font-bold mb-4">GitHub Commits Verifier</h1>
 
       <div className="mb-4 w-full max-w-lg">
         <Input
@@ -62,38 +71,66 @@ export default function Home() {
           onChange={(e) => setRepoUrl(e.target.value)}
           className="w-full mb-4"
         />
-        <Button onClick={fetchCommits} className="w-full">
+        <Button
+          onClick={fetchCommits}
+          className="w-full bg-greyscale-50/8 border border-white/80 text-white hover:border-opacity-80 hover:bg-white/10"
+        >
           Fetch Commits
         </Button>
       </div>
 
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      <div className="w-full max-w-lg">
+      <div className="w-full max-w-4xl">
+        {" "}
+        {/* Increased max-width for better table display */}
         {commits.length > 0 ? (
-          <ul className="bg-gray-800 p-4 rounded-lg shadow-lg">
-            {commits.map((commit: any) => (
-              <li key={commit.sha} className="mb-4">
-                <p className="text-sm font-bold">{commit.commit.message}</p>
-                <p className="text-xs text-gray-400">
-                  Author: {commit.commit.author.name}
-                </p>
-                <p className="text-xs text-gray-500">
-                  Date: {new Date(commit.commit.author.date).toLocaleString()}
-                </p>
-                <Button
-                  onClick={() => handleClaim(commit.sha)}
-                  className="mt-2 bg-green-500 hover:bg-green-700"
-                >
-                  Claim
-                </Button>
-              </li>
-            ))}
-          </ul>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Message</TableHead>
+                <TableHead>Hash</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {commits.map((commit: any) => (
+                <TableRow key={commit.sha}>
+                  <TableCell className="font-medium">
+                    {commit.commit.message}
+                  </TableCell>
+                  <TableCell>
+                    <Link
+                      href={`https://github.com/${
+                        extractRepoInfo(repoUrl)?.username
+                      }/${extractRepoInfo(repoUrl)?.repoName}/commit/${
+                        commit.sha
+                      }`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300 underline"
+                    >
+                      {commit.sha.substring(0, 7)}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(commit.commit.author.date).toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      onClick={() => handleClaim(commit.sha)}
+                      className="bg-greyscale-50/8 border border-white/80 text-white hover:border-opacity-80 hover:bg-white/10"
+                    >
+                      proof
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         ) : (
-          !error && (
-            <p>No commits found. Enter a repository URL and fetch commits.</p>
-          )
+          !error && <p></p>
         )}
       </div>
     </div>
