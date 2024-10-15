@@ -13,15 +13,48 @@ export default function ClaimPage() {
   const [content, setContent] = useState("");
   const [proof, setProof] = useState("");
 
-  const generateProof = () => {
-    // Mock proof generation
-    setProof(
-      `Proof for commit: ${commitHash}, Signature: ${signature}, Content: ${content}`
-    );
+  const generateProof = async (commitSignature: {
+    signature: string;
+    message: string;
+  }) => {
+    setIsProofLoading(true);
+    try {
+      const response = await fetch(`${SERVER_URL}/generate-proof`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ssh_sig: commitSignature.signature,
+          raw_msg: commitSignature.message,
+        }),
+      });
+      const result = await response.json();
+      setProof(result);
+    } catch (e) {
+      console.error(e);
+      setProof("");
+    }
+    setIsProofLoading(false);
   };
 
-  const verifyProof = () => {
-    alert(`Verifying proof for: ${proof}`);
+  const verifyProof = async () => {
+    try {
+      const response = await fetch(`${SERVER_URL}/verify-proof`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          proof,
+        }),
+      });
+      const result = await response.json();
+      setIsProofValid(result);
+    } catch (e) {
+      console.error(e);
+      setIsProofValid(false);
+    }
   };
 
   return (

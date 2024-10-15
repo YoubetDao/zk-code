@@ -1,136 +1,126 @@
-"use client"; // Add this at the very top
+"use client";
 
 import { useState } from "react";
-import axios from "axios";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation"; // Ensure you're using this import for the App Router
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import Link from "next/link";
+import { Textarea } from "@/components/ui/textarea";
+
+const SERVER_URL = "http://43.132.156.239:5566";
 
 export default function Home() {
-  const [repoUrl, setRepoUrl] = useState("");
-  const [commits, setCommits] = useState([]);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter(); // No more error
+  const [signature, setSignature] = useState("");
+  const [message, setMessage] = useState("");
+  const [proof, setProof] = useState("");
+  const [isProofLoading, setIsProofLoading] = useState(false);
+  const [isProofValid, setIsProofValid] = useState<boolean | null>(null);
 
-  const extractRepoInfo = (url: string) => {
-    const match = url.match(/github\.com\/([^/]+)\/([^/]+)/);
-    if (match) {
-      return {
-        username: match[1],
-        repoName: match[2],
-      };
-    }
-    return null;
-  };
-
-  const fetchCommits = async () => {
-    const repoInfo = extractRepoInfo(repoUrl);
-    if (!repoInfo) {
-      setError("Invalid GitHub repository URL.");
-      setCommits([]);
-      return;
-    }
-
-    const { username, repoName } = repoInfo;
-    const apiUrl = `https://api.github.com/repos/${username}/${repoName}/commits`;
-
+  const generateProof = async () => {
+    setIsProofLoading(true);
     try {
-      const response = await axios.get(apiUrl);
-      setCommits(response.data);
-      setError(null);
-    } catch (err) {
-      setError(
-        "Failed to fetch commits. Make sure the repository exists and is public."
-      );
-      setCommits([]);
+      const response = await fetch(`${SERVER_URL}/generate-proof`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ssh_sig: signature,
+          raw_msg: message,
+        }),
+      });
+      const result = await response.json();
+      setProof(result);
+    } catch (e) {
+      console.error(e);
+      setProof("");
     }
+    setIsProofLoading(false);
   };
 
-  const handleClaim = (commitHash: string) => {
-    router.push(`/claim?commit=${commitHash}`);
+  const verifyProof = async () => {
+    try {
+      const response = await fetch(`${SERVER_URL}/verify-proof`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          proof,
+        }),
+      });
+      const result = await response.json();
+      setIsProofValid(result);
+    } catch (e) {
+      console.error(e);
+      setIsProofValid(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-6">
-      <h1 className="text-2xl font-bold mb-4">GitHub Commits Verifier</h1>
+      <h1 className="text-2xl font-bold mb-6">Commit Signature Verifier</h1>
 
-      <div className="mb-4 w-full max-w-lg">
-        <Input
-          type="text"
-          placeholder="Enter GitHub repo URL (e.g., https://github.com/wfnuser/zk-code-test)"
-          value={repoUrl}
-          onChange={(e) => setRepoUrl(e.target.value)}
-          className="w-full mb-4"
-        />
+      <div className="w-full max-w-lg space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1" htmlFor="signature">
+            Signature
+          </label>
+          <Textarea
+            id="signature"
+            value={signature}
+            onChange={(e) => setSignature(e.target.value)}
+            className="min-h-[128px] bg-gray-800 text-white border-gray-700"
+            placeholder="Enter signature"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1" htmlFor="message">
+            Message
+          </label>
+          <Textarea
+            id="message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            className="min-h-[128px] bg-gray-800 text-white border-gray-700"
+            placeholder="Enter message"
+          />
+        </div>
+
         <Button
-          onClick={fetchCommits}
+          onClick={generateProof}
           className="w-full bg-greyscale-50/8 border border-white/80 text-white hover:border-opacity-80 hover:bg-white/10"
+          disabled={isProofLoading}
         >
-          Fetch Commits
+          {isProofLoading ? "Generating..." : "Generate Proof"}
         </Button>
-      </div>
 
-      {error && <p className="text-red-500 mb-4">{error}</p>}
+        {proof && (
+          <div>
+            <label className="block text-sm font-medium mb-1" htmlFor="proof">
+              Proof
+            </label>
+            <Textarea
+              id="proof"
+              value={proof}
+              readOnly
+              className="min-h-[128px] bg-gray-800 text-white border-gray-700"
+            />
+          </div>
+        )}
 
-      <div className="w-full max-w-4xl">
-        {" "}
-        {/* Increased max-width for better table display */}
-        {commits.length > 0 ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Commit</TableHead>
-                <TableHead>Message</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {commits.map((commit: any) => (
-                <TableRow key={commit.sha}>
-                  <TableCell>
-                    <Link
-                      href={`https://github.com/${
-                        extractRepoInfo(repoUrl)?.username
-                      }/${extractRepoInfo(repoUrl)?.repoName}/commit/${
-                        commit.sha
-                      }`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300 underline"
-                    >
-                      {commit.sha.substring(0, 7)}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {commit.commit.message}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(commit.commit.author.date).toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      onClick={() => handleClaim(commit.sha)}
-                      className="bg-greyscale-50/8 border border-white/80 text-white hover:border-opacity-80 hover:bg-white/10"
-                    >
-                      gen proof
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          !error && <p></p>
+        <Button
+          onClick={verifyProof}
+          className="w-full bg-greyscale-50/8 border border-white/80 text-white hover:border-opacity-80 hover:bg-white/10"
+          disabled={!proof}
+        >
+          Verify Proof
+        </Button>
+
+        {isProofValid !== null && (
+          <div className="mt-4 text-center">
+            <p className={`text-lg font-bold ${isProofValid ? 'text-green-500' : 'text-red-500'}`}>
+              Proof is {isProofValid ? 'valid' : 'invalid'}
+            </p>
+          </div>
         )}
       </div>
     </div>
